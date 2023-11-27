@@ -17,8 +17,11 @@
   pip install -r requirements.txt
 ```
 #### 4. Create and configure -env file
-   SECRET_KEY = {Secret key that can be any string}
-  ALGORITHM = "HS256"
-  ACCESS_TOKEN_EXPIRE_MINUTES = {Time for access token to expire in minutes}
-  REFRESH_TOKEN_EXPIRE_HOURS = {Time for refresh token to expire in hours}
-  SQLALCHEMY_DATABASE_URL = {Link to your database}
+
+  | Parameter | Type     | Description                |
+| :-------- | :------- | :------------------------- |
+| `SECRET_KEY` | `string` | **Required**. Your secret key |
+| `ALGORITHM` | `string` | **Required**. hashing algorithm. I was using HS256 |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `integer` | **Required**. Time for access token to expire in minutes |
+| `REFRESH_TOKEN_EXPIRE_HOURS` | `integer` | **Required**. Time for refresh token to expire in hours |
+| `SQLALCHEMY_DATABASE_URL` | `string` | **Required**. Link to your database |
