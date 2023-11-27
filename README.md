@@ -25,3 +25,11 @@
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `integer` | **Required**. Time for access token to expire in minutes |
 | `REFRESH_TOKEN_EXPIRE_HOURS` | `integer` | **Required**. Time for refresh token to expire in hours |
 | `SQLALCHEMY_DATABASE_URL` | `string` | **Required**. Link to your database |
+
+#### 5. Configure alembic
+  In alembic.ini file in main folder change sqlalchemy.url variable to your SQLALCHEMY_DATABASE_URL
+  Then you can do 
+  ```bash
+  alembic upgrade head
+```
+in terminal to create tables in your database
