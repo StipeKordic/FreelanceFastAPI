@@ -6,7 +6,8 @@
 ```
 
 #### 2. Open folder in your editor and configure virtual enviroment
-   Use this command in powershell terminal: ```bash
+   Use this command in powershell terminal:
+   ```bash
   python -m venv .venv
 ```
    and than select that enviroment as interpreter
