@@ -10,13 +10,13 @@
    ```bash
   python -m venv .venv
 ```
-   and than select that enviroment as interpreter
+   and than select that enviroment as your python interpreter
 
 #### 3. Install requirements  
    ```bash
   pip install -r requirements.txt
 ```
-#### 4. Create and configure -env file
+#### 4. Create and configure .env file
 
   | Parameter | Type     | Description                |
 | :-------- | :------- | :------------------------- |
