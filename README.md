@@ -27,8 +27,7 @@
 | `SQLALCHEMY_DATABASE_URL` | `string` | **Required**. Link to your database |
 
 #### 5. Configure alembic
-  In alembic.ini file in main folder change sqlalchemy.url variable to your SQLALCHEMY_DATABASE_URL
-  Then you can do 
+  Type:
   ```bash
   alembic upgrade head
 ```
