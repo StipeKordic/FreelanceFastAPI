@@ -41,5 +41,5 @@ INSERT INTO roles ("role_name") VALUES ('SuperAdmin'), ('Admin'), ('RegularUser'
 INSERT INTO permissions ("permission_name") VALUES ('get_all_users'), ('create_service'), ('delete_service'), ('update_service'), ('update_service_image'), ('update_role_of_user'), ('delete_user');
 ```
 
-In update_role_of_permission endpoit you should do 3 requests. new_role_id needs to be 1 in all 3 and permission_id should be 1, 6 and 7.
+In update_role_of_permission endpoint you should do 3 requests. new_role_id needs to be 1 in all 3 requests and permission_id should be 1, 6 and 7.
 When you register first user you should make him superadmin by configuring his role_id in user_roles table from 3 to 1.
