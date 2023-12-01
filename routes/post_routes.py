@@ -42,7 +42,11 @@ async def create_post(post: Post = Depends(Post), file: UploadFile = File(None),
 
 @post_router.get("/", description=descriptions.get_all_posts)
 def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current_user)):
-    posts = db.query(models.Post).all()
+    posts = db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
+                     label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
+                                                      isouter=True).group_by(models.Post).all()
+
+    posts = list(map(lambda x: x._mapping, posts))
     return posts
 
 
@@ -57,14 +61,15 @@ def get_posts_by_filter(id: int, min_price: float = 0, max_price: float = 999, r
                         db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     if review != 0:
-        posts = (db.query(models.Post).join(models.Review, models.Post.id == models.Review.post_id, isouter=True)
+        posts = (db.query(models.Post, func.avg(models.Review.review).label("Review")).join(models.Review, models.Post.id == models.Review.post_id, isouter=True)
                  .group_by(models.Post).having(func.avg(models.Review.review) >= review).filter(
             models.Post.service_id == id, models.Post.price >= min_price, models.Post.price <= max_price).all())
     else:
-        posts = db.query(models.Post).join(models.Review, models.Post.id == models.Review.post_id,
+        posts = db.query(models.Post, func.avg(models.Review.review).label("Review")).join(models.Review, models.Post.id == models.Review.post_id,
                                        isouter=True).group_by(models.Post).filter(models.Post.service_id == id,
                                                                                   models.Post.price >= min_price,
                                                                                   models.Post.price <= max_price).all()
+    posts = list(map(lambda x: x._mapping, posts))
 
     return posts
 

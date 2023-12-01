@@ -89,7 +89,7 @@ get_posts_by_filter = "Get route that returns all posts that satisfy certain con
                       " (0 review as it is lowest, 0 for min_price as it is lowest and 999 for max_price as some big number)." \
                       " There are two different queries because if review is 0 it should return all posts that satisfy other " \
                       "parameters but avg is returning null for posts that don't have reviews so avg>=0 doesn't return them. " \
-                      "So one of the queries doesn't check at all for review is sent review is 0."
+                      "So one of the queries doesn't check at all for review if sent review is 0 (meaning review parameter was not sent at all)."
 
 
 get_posts_of_logged_user = "Get route that returns all post of user that is logged in. This route is protected only for " \
