@@ -2,7 +2,7 @@ import os
 import secrets
 from PIL import Image
 from io import BytesIO
-from fastapi import APIRouter, status, Depends, Response, File, UploadFile
+from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -38,7 +38,7 @@ def get_service_by_id(id: int, db: Session = Depends(get_db)):
 
 
 @service_router.post("/", description=descriptions.create_service)
-async def create_service(service: Service = Depends(Service), file: UploadFile = File(None),
+async def create_service(request: Request, service: Service = Depends(Service), file: UploadFile = File(None),
                          db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     if "create_service" not in user.permissions:
@@ -61,9 +61,8 @@ async def create_service(service: Service = Depends(Service), file: UploadFile =
     db.commit()
     db.refresh(new_service)
 
-    return {"Service": new_service}
-
-# This way name, description and short_description are sent as query parameters so maybe it can be used here
+    return new_service
+# This way name, description and short_description are sent as query parameters, so maybe it can be used here
 # but probably not for creating user
 
 # @service_router.post("/s")

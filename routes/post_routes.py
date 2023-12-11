@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status, Depends, Response, File, UploadFile
+from typing import Annotated, Union
+
+from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Header, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -6,7 +8,7 @@ from database import get_db
 import models
 import descriptions
 from schemas import Post, TokenData, PostUpdate
-from oauth2 import get_current_user
+from oauth2 import get_current_user, oauth2_scheme
 from PIL import Image
 from io import BytesIO
 import os
@@ -143,3 +145,8 @@ def delete_post(id: int, db: Session = Depends(get_db), user: int = Depends(get_
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@post_router.get("/example/")
+def header_setter(request: Request):
+    return request.headers
