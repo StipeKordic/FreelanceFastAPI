@@ -10,7 +10,7 @@
    ```bash
   python -m venv .venv
 ```
-   and than select that enviroment as your python interpreter
+   and than select that enviroment as your python interpreter. You can also do it in settings if you are using PyCharm.
 
 #### 3. Install requirements  
    ```bash
@@ -31,7 +31,7 @@
   ```bash
   alembic upgrade head
 ```
-in terminal to create tables in your database
+in terminal to create tables in your database. (First you need to make a database and make a connection to it which you can do using last step.)
 
 #### 6. Add basic data in database
 ```bash
@@ -40,6 +40,8 @@ INSERT INTO roles ("role_name") VALUES ('SuperAdmin'), ('Admin'), ('RegularUser'
 ```bash
 INSERT INTO permissions ("permission_name") VALUES ('get_all_users'), ('create_service'), ('delete_service'), ('update_service'), ('update_service_image'), ('update_role_of_user'), ('delete_user');
 ```
+```bash
+INSERT INTO permission_roles ("permission_id", "role_id") VALUES (1,1),(2,2),(3,2),(4,2),(5,2),(6,1),(7,1);
+```
 
-In update_role_of_permission endpoint you should do 3 requests. new_role_id needs to be 1 in all 3 requests and permission_id should be 1, 6 and 7.
 When you register first user you should make him superadmin by configuring his role_id in user_roles table from 3 to 1.
