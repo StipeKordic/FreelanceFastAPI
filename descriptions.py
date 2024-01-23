@@ -68,7 +68,10 @@ update_service_image = "Put route to change service image. This route is restric
 login_user = ""
 
 
-get_all_posts = "Get route to get all posts. This route is protected only for authorized users."
+get_all_posts = "Get route to get all posts. This route is protected only for authorized users, db.query is first mapped " \
+                 "as list of RowMapping objects since there is joined data from more tables. After that list is converted" \
+                "to list of dictionaries so that review value could be set to 0 if there is not reviews for that post (by" \
+                "default it is null)"
 
 
 create_post = "Post route for creating post. This route is protected only for authorized users. To create post description" \

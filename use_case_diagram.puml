@@ -1,0 +1,42 @@
+@startuml
+left to right direction
+
+actor SuperAdmin
+actor Admin
+actor RegularUser
+
+rectangle "Regular User Rectangle" {
+  RegularUser --> (Login)
+  RegularUser --> (View Posts)
+  RegularUser --> (Search Posts)
+  RegularUser --> (Review Post)
+  RegularUser --> (View Profile)
+  RegularUser --> (Change Information)
+  RegularUser --> (Add Post)
+  RegularUser --> (Update Post)
+  RegularUser --> (Delete Post)
+  RegularUser --> (Logout)
+}
+
+rectangle "Admin Rectangle" {
+  Admin --> (Delete All Posts) <<include>>
+  Admin --> (Add Service)
+  Admin --> (Update Service)
+  Admin --> (Delete Service)
+}
+
+rectangle "Super Admin Rectangle" {
+  SuperAdmin --> (View All Users)
+  SuperAdmin --> (Delete User)
+  SuperAdmin --> (Change User Role)
+}
+
+note right of Admin
+  Admin inherits all use cases from RegularUser
+end note
+
+note right of SuperAdmin
+  SuperAdmin inherits all use cases from Admin
+end note
+
+@enduml

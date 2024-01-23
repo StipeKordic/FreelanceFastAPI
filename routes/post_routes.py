@@ -25,7 +25,7 @@ async def create_post(post: Post = Depends(Post), file: UploadFile = File(None),
                       user: TokenData = Depends(get_current_user)):
     if file:
         if not file.content_type.startswith("image"):
-            return {"error": "Invalid type"}
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid type!")
         image = Image.open(BytesIO(await file.read()))
         filepath = "/static/images/"
         filename = file.filename
@@ -48,8 +48,14 @@ def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current
                      label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
                                                       isouter=True).group_by(models.Post).all()
 
+
     posts = list(map(lambda x: x._mapping, posts))
-    return posts
+    list_of_dictionaries = [dict(post) for post in posts]
+    for post in list_of_dictionaries:
+        if not post["Review"]:
+            post["Review"] = 0
+
+    return list_of_dictionaries
 
 
 @post_router.get("/service/{id}", description=descriptions.get_posts_by_service)
