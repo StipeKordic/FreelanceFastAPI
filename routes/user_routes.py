@@ -54,7 +54,7 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
 def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     if "get_all_users" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
-    users = db.query(models.User).filter(models.User.id != user.user_id).all()
+    users = db.query(models.User).all()
     return users
 
 
@@ -64,7 +64,7 @@ def get_user_by_id(id: int, db: Session = Depends(get_db)):
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that id not found")
-    return {"User": user}
+    return user
 
 
 @user_router.delete("/{id}", description=descriptions.delete_user)

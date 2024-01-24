@@ -22,17 +22,18 @@ auth_router = APIRouter(
 def login_user(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 
     user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
-    user_role = db.query(models.UserRole).filter(models.UserRole.user_id == user.id).first()
-    permissions = db.query(models.Permission).join(models.PermissionRole,
-                                                   models.PermissionRole.permission_id == models.Permission.id,
-                                                   isouter=True).filter(
-        models.PermissionRole.role_id >= user_role.role_id).all()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
 
     if not utils.verify(user_credentials.password, user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
+
+    user_role = db.query(models.UserRole).filter(models.UserRole.user_id == user.id).first()
+    permissions = db.query(models.Permission).join(models.PermissionRole,
+                                                   models.PermissionRole.permission_id == models.Permission.id,
+                                                   isouter=True).filter(
+        models.PermissionRole.role_id >= user_role.role_id).all()
 
     permissions_list = []
     for perm in permissions:

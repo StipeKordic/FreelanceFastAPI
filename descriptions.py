@@ -65,7 +65,9 @@ update_service_image = "Put route to change service image. This route is restric
                        "folder. File parameter (used for image) is UploadFile type."
 
 
-login_user = ""
+login_user = "User is found in db by email. If user is not found or his password/email doesn't match exception is returned" \
+              " Than his role is retrived with his id and than based on that role his permissions are found and stored in array." \
+             "New access and refresh tokens are than created and returned, access token contains user_id, name, role and permissions"
 
 
 get_all_posts = "Get route to get all posts. This route is protected only for authorized users, db.query is first mapped " \
@@ -153,7 +155,10 @@ create_permission = "Post route for creating new permission. Only permission_nam
                     "meant to be only for superadmins role_id of that PermissionRole can be changed to superadmins role."
 
 
-update_role_of_permission = "Put route for updating role that can access that specific permission."
+update_role_of_permission = "Put route for updating which role can access certain permission. If role_id is 1 than "  \
+                            "it means only SuperAdmin will be able to use that permission, if it is set to 2 than it means" \
+                            "both Admin and SuperAdmin can use it. By default role_id for every permission is set on 2" \
+                            "in permission_roles table (create_permission endpoint)."
 
 
 update_permission = "Put route for updating name of certain permission."
@@ -163,7 +168,4 @@ create_new_access_token = "Refresh token is sent as query parameter and user id 
                            " User is then queried by that id and his info is saved in data dictionary just like" \
                            " login route. New access token is then created. This route is supposed to be called every "\
                             "few minutes before original tokens expire so user doesn't need to login constantly. Refresh "\
-                            "token also has expiration time so when it is done user will then need to log in again"\
-
-
-#POPRAVI OPIS FUNKCIJA ZA USERA I UPDATE_ROLE_OF_PERMISSION POPRAVI I PROVJERI ACCESS
+                            "token also has expiration time so when it is done user will then need to log in again"
