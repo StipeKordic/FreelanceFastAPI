@@ -80,5 +80,17 @@ class Role(BaseModel):
     role_name: str
 
 
+class RoleOut(Role):
+    id: int
+
+
+class UserOut2(BaseModel):
+    User: UserOut
+    Role: RoleOut
+
 class Permission(BaseModel):
     permission_name: str
+
+
+class PostOut(BaseModel):
+    description: str

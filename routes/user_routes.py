@@ -7,7 +7,7 @@ from database import get_db
 import models
 import utils
 from oauth2 import get_current_user, create_access_token
-from schemas import User, UserUpdate, TokenData, UserOut
+from schemas import User, UserUpdate, TokenData, UserOut, UserOut2
 from PIL import Image
 from io import BytesIO
 import os
@@ -50,21 +50,26 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
     return new_user
 
 
-@user_router.get("/", description=descriptions.get_all_users, response_model=List[UserOut])
+@user_router.get("/", description=descriptions.get_all_users, response_model=List[UserOut2])
 def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     if "get_all_users" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
-    users = db.query(models.User).all()
+    users = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).all()
+
+    users = list(map(lambda x: x._mapping, users))
+
     return users
 
 
-@user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOut)
+@user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOut2)
 def get_user_by_id(id: int, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id).first()
+    user, role = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).filter(models.User.id == id).first()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that id not found")
-    return user
+
+    response = {"User": user, "Role": role}
+    return response
 
 
 @user_router.delete("/{id}", description=descriptions.delete_user)

@@ -1,4 +1,4 @@
-from typing import Annotated, Union
+from typing import Annotated, Union, List
 
 from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Header, Request
 from fastapi.exceptions import HTTPException
@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import descriptions
-from schemas import Post, TokenData, PostUpdate
+from schemas import Post, TokenData, PostUpdate, PostOut
 from oauth2 import get_current_user, oauth2_scheme
 from PIL import Image
 from io import BytesIO
@@ -82,7 +82,7 @@ def get_posts_by_filter(id: int, min_price: float = 0, max_price: float = 999, r
     return posts
 
 
-@post_router.get("/userPosts", description=descriptions.get_posts_of_logged_user)
+@post_router.get("/userPosts", description=descriptions.get_posts_of_logged_user, response_model=List[PostOut])
 def get_posts_of_logged_user(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     posts = db.query(models.Post).filter(models.Post.user_id == user.user_id).all()
     return posts
