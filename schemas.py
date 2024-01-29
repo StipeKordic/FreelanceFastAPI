@@ -84,7 +84,7 @@ class RoleOut(Role):
     id: int
 
 
-class UserOut2(BaseModel):
+class UserOutWithRole(BaseModel):
     User: UserOut
     Role: RoleOut
 

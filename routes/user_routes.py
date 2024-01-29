@@ -1,13 +1,15 @@
 from typing import List
-
-from fastapi import APIRouter, status, Depends, Response, File, UploadFile
+from starlette.datastructures import MutableHeaders
+from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Header
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
+
 from database import get_db
 import models
 import utils
 from oauth2 import get_current_user, create_access_token
-from schemas import User, UserUpdate, TokenData, UserOut, UserOut2
+from schemas import User, UserUpdate, TokenData, UserOut, UserOutWithRole
 from PIL import Image
 from io import BytesIO
 import os
@@ -50,7 +52,7 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
     return new_user
 
 
-@user_router.get("/", description=descriptions.get_all_users, response_model=List[UserOut2])
+@user_router.get("/", description=descriptions.get_all_users, response_model=List[UserOutWithRole])
 def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     if "get_all_users" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
@@ -61,7 +63,7 @@ def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_c
     return users
 
 
-@user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOut2)
+@user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOutWithRole)
 def get_user_by_id(id: int, db: Session = Depends(get_db)):
     user, role = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).filter(models.User.id == id).first()
 
@@ -115,7 +117,7 @@ async def update_user_image(file: UploadFile = File(None), db: Session = Depends
 
 @user_router.put("/", description=descriptions.update_user)
 async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
-                      user_from_token: TokenData = Depends(get_current_user)):
+                      user_from_token: TokenData = Depends(get_current_user), authorization: str | None = Header(None),):
 
     user_query = db.query(models.User).filter(models.User.id == user_from_token.user_id)
 
@@ -144,4 +146,8 @@ async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
     access_token = create_access_token(data)[0]
     refresh_token = create_access_token(data)[1]
 
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "Bearer"}
+    raise HTTPException(
+        status_code=status.HTTP_200_OK,
+        detail="User updated successfully",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )

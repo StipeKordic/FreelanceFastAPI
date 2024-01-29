@@ -48,7 +48,6 @@ def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current
                      label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
                                                       isouter=True).group_by(models.Post).all()
 
-
     posts = list(map(lambda x: x._mapping, posts))
     list_of_dictionaries = [dict(post) for post in posts]
     for post in list_of_dictionaries:
@@ -64,22 +63,35 @@ def get_posts_by_service(id: int, db: Session = Depends(get_db), user: TokenData
     return posts
 
 
-@post_router.get("/filter/{id}", description=descriptions.get_posts_by_filter)
-def get_posts_by_filter(id: int, min_price: float = 0, max_price: float = 999, review: float = 0,
+@post_router.get("/filter", description=descriptions.get_posts_by_filter)
+def get_posts_by_filter(service_id: int = 0, min_price: float = 0, max_price: float = 999
+                        , review: float = 0, page: int = 1,
                         db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
-    if review != 0:
-        posts = (db.query(models.Post, func.avg(models.Review.review).label("Review")).join(models.Review, models.Post.id == models.Review.post_id, isouter=True)
-                 .group_by(models.Post).having(func.avg(models.Review.review) >= review).filter(
-            models.Post.service_id == id, models.Post.price >= min_price, models.Post.price <= max_price).all())
-    else:
-        posts = db.query(models.Post, func.avg(models.Review.review).label("Review")).join(models.Review, models.Post.id == models.Review.post_id,
-                                       isouter=True).group_by(models.Post).filter(models.Post.service_id == id,
-                                                                                  models.Post.price >= min_price,
-                                                                                  models.Post.price <= max_price).all()
-    posts = list(map(lambda x: x._mapping, posts))
+    basic_query = (db.query(models.Post, func.avg(models.Review.review).label("Review"),
+                                      func.count(models.Review.post_id).label("Number of reviews")).join(models.Review,
+                                                                                                        isouter=True)
+                                    .group_by(models.Post).filter(
+                                        models.Post.price >= min_price, models.Post.price <= max_price)
+                                    )
 
-    return posts
+    if service_id == 0 and review == 0:
+        posts = basic_query.offset((page - 1) * 2).limit(2).all()
+    elif service_id == 0 and review != 0:
+        posts = basic_query.having(func.avg(models.Review.review) >= review).offset((page - 1) * 2).limit(2).all()
+    elif service_id != 0 and review == 0:
+        posts = basic_query.filter(models.Post.service_id == service_id).offset((page - 1) * 2).limit(2).all()
+    else:
+        posts = basic_query.having(func.avg(models.Review.review) >= review).filter(
+            models.Post.service_id == service_id).offset((page - 1) * 2).limit(2).all()
+
+    posts = list(map(lambda x: x._mapping, posts))
+    list_of_dictionaries = [dict(post) for post in posts]
+    for post in list_of_dictionaries:
+        if not post["Review"]:
+            post["Review"] = 0
+
+    return list_of_dictionaries
 
 
 @post_router.get("/userPosts", description=descriptions.get_posts_of_logged_user, response_model=List[PostOut])
@@ -123,7 +135,6 @@ async def update_post_image(id: int, file: UploadFile = File(None), db: Session 
 @post_router.put("/{id}", description=descriptions.update_post)
 def update_post(id: int, updated_post: PostUpdate, db: Session = Depends(get_db),
                 user: int = Depends(get_current_user)):
-
     post_query = db.query(models.Post).filter(models.Post.id == id)
     post = post_query.first()
     if not post:
@@ -151,8 +162,3 @@ def delete_post(id: int, db: Session = Depends(get_db), user: int = Depends(get_
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@post_router.get("/example/")
-def header_setter(request: Request):
-    return request.headers
