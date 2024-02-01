@@ -4,6 +4,8 @@ from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Head
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+import utils
 from database import get_db
 import models
 import descriptions
@@ -44,9 +46,12 @@ async def create_post(post: Post = Depends(Post), file: UploadFile = File(None),
 
 @post_router.get("/", description=descriptions.get_all_posts)
 def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current_user)):
-    posts = db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
-                     label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
-                                                      isouter=True).group_by(models.Post).all()
+
+    posts = (db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
+                     label("Number of reviews"), models.User.email).select_from(models.Post).join(
+        models.User, models.Post.user_id == models.User.id).join(models.Review, models.Post.id == models.Review.post_id
+                                                                 , isouter=True).group_by(
+                                                                                models.Post, models.User.email).all())
 
     posts = list(map(lambda x: x._mapping, posts))
     list_of_dictionaries = [dict(post) for post in posts]
@@ -59,8 +64,19 @@ def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current
 
 @post_router.get("/service/{id}", description=descriptions.get_posts_by_service)
 def get_posts_by_service(id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
-    posts = db.query(models.Post).filter(models.Post.service_id == id).all()
-    return posts
+
+    posts = (db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
+                     label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
+                                                      isouter=True).group_by(models.Post)
+                                                    .filter(models.Post.service_id == id).all())
+
+    posts = list(map(lambda x: x._mapping, posts))
+    list_of_dictionaries = [dict(post) for post in posts]
+    for post in list_of_dictionaries:
+        if not post["Review"]:
+            post["Review"] = 0
+
+    return list_of_dictionaries
 
 
 @post_router.get("/filter", description=descriptions.get_posts_by_filter)
@@ -76,14 +92,14 @@ def get_posts_by_filter(service_id: int = 0, min_price: float = 0, max_price: fl
                                     )
 
     if service_id == 0 and review == 0:
-        posts = basic_query.offset((page - 1) * 2).limit(2).all()
+        posts = basic_query.offset((page - 1) * 10).limit(10).all()
     elif service_id == 0 and review != 0:
-        posts = basic_query.having(func.avg(models.Review.review) >= review).offset((page - 1) * 2).limit(2).all()
+        posts = basic_query.having(func.avg(models.Review.review) >= review).offset((page - 1) * 10).limit(10).all()
     elif service_id != 0 and review == 0:
-        posts = basic_query.filter(models.Post.service_id == service_id).offset((page - 1) * 2).limit(2).all()
+        posts = basic_query.filter(models.Post.service_id == service_id).offset((page - 1) * 10).limit(10).all()
     else:
         posts = basic_query.having(func.avg(models.Review.review) >= review).filter(
-            models.Post.service_id == service_id).offset((page - 1) * 2).limit(2).all()
+            models.Post.service_id == service_id).offset((page - 1) * 10).limit(10).all()
 
     posts = list(map(lambda x: x._mapping, posts))
     list_of_dictionaries = [dict(post) for post in posts]
@@ -94,18 +110,33 @@ def get_posts_by_filter(service_id: int = 0, min_price: float = 0, max_price: fl
     return list_of_dictionaries
 
 
-@post_router.get("/userPosts", description=descriptions.get_posts_of_logged_user, response_model=List[PostOut])
+@post_router.get("/userPosts", description=descriptions.get_posts_of_logged_user)
 def get_posts_of_logged_user(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
-    posts = db.query(models.Post).filter(models.Post.user_id == user.user_id).all()
-    return posts
+
+    posts = (db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
+                     label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
+                                                      isouter=True).group_by(models.Post)
+                                                    .filter(models.Post.user_id == user.user_id).all())
+
+    posts = list(map(lambda x: x._mapping, posts))
+    list_of_dictionaries = [dict(post) for post in posts]
+    for post in list_of_dictionaries:
+        if not post["Review"]:
+            post["Review"] = 0
+
+    return list_of_dictionaries
 
 
 @post_router.get("/{id}", description=descriptions.get_post_by_id)
 def get_post_by_id(id: int, db: Session = Depends(get_db), user: int = Depends(get_current_user)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post with that id not found")
-    return {"Post": post}
+
+
+        post, review, num_reviews = (db.query(models.Post, func.avg(models.Review.review), func.count(models.Review.post_id))
+                                     .join(models.Review).group_by(models.Post).filter(models.Post.id == id).first())
+        response = {"Post": post, "Review": review, "Number of reviews": num_reviews}
+        print(response)
+        return response
+
 
 
 @post_router.put("/image/{id}", description=descriptions.update_post_image)
