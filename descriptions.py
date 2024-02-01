@@ -1,3 +1,5 @@
+import secrets
+
 create_user = "Post route for creating user (Sign up). User atributes are: email, first_name, last_name and password." \
               " All those fields are required, email needs to be valid email type. Password is hashed after everything" \
               " gets verifyed. Parameter file is of UploadFile type and it is not required. If user doesn't provide it," \
@@ -6,11 +8,12 @@ create_user = "Post route for creating user (Sign up). User atributes are: email
               " with same names. Also user is automatically assigned RegularUser role (which has id of 3)."
 
 
-get_all_users = "Get route that return all users except currently loggedIn user from database. This route is " \
-                 "restricted only for superadmins"
+get_all_users = "Get route that return all users from database. This route is restricted only for superadmins" \
+                 "It returns "
 
 
-get_user_by_id = "Get route that returns single user by his id which is provided as path parameter."
+get_user_by_id = "Get route that returns single user by his id which is provided as path parameter. It returns" \
+                 "user with their role name and role id"
 
 
 delete_user = "Delete route for deleting user from database. User's id is provided as path parameter and if user" \
@@ -88,13 +91,21 @@ get_posts_by_service = "Get route that returns all posts of single service. Serv
                        "posts for that service displayed."
 
 
-get_posts_by_filter = "Get route that returns all posts that satisfy certain conditions. Min and max price and review are" \
-                      " sent as query parameters and service_id is sent as path parameter. This route is protected only for" \
-                      " authorized users. Posts are than queried by those parameters. prices and review have default values" \
+get_posts_by_filter = "Get route that returns all posts that satisfy certain conditions. Min and max price, review and" \
+                      "service_id are sent as query parameters. This route is protected only for authorized users." \
+                      "Posts are than queried by those parameters. Prices and review have default values." \
                       " (0 review as it is lowest, 0 for min_price as it is lowest and 999 for max_price as some big number)." \
-                      " There are two different queries because if review is 0 it should return all posts that satisfy other " \
-                      "parameters but avg is returning null for posts that don't have reviews so avg>=0 doesn't return them. " \
-                      "So one of the queries doesn't check at all for review if sent review is 0 (meaning review parameter was not sent at all)."
+                      " In case of service_id default value is 0 for cases when user doesn't want to filter by services." \
+                      " There is a basic_query that suits all cases. 4 cases are combination of whether review and service_id" \
+                      " are sent. If service_id is not sent (default value is than used which is 0) than in WHERE statement (.filter)" \
+                      " it is not checked if service_id equals Post.service_id. if service_id has value other than 0 that case" \
+                      " is checked. If review is not sent (default value is 0) HAVING statement is not included and otherwise" \
+                      " HAVING statement is included. That is because avg of reviews returns null if there is no reviews and" \
+                      " null >= 0 if False so in that cases this condition is not checked at all. Also pagination is included" \
+                      " with 10 results per page. Offset and limit" \
+                      " functions are not in basic_query because there is additional conditions like having statement and" \
+                      " where statement in some cases. At the end elements are converted to dictionaries so end result doesn't" \
+                      " show null for review but number 0." \
 
 
 get_posts_of_logged_user = "Get route that returns all post of user that is logged in. This route is protected only for " \

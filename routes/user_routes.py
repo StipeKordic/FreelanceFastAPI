@@ -1,15 +1,13 @@
 from typing import List
-from starlette.datastructures import MutableHeaders
-from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Header
+import sqlalchemy.exc
+from fastapi import APIRouter, status, Depends, Response, File, UploadFile
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
-from starlette.responses import JSONResponse
-
 from database import get_db
 import models
 import utils
 from oauth2 import get_current_user, create_access_token
-from schemas import User, UserUpdate, TokenData, UserOut, UserOutWithRole
+from schemas import User, UserUpdate, TokenData, UserOut, UserOutWithRole, ChangePassword
 from PIL import Image
 from io import BytesIO
 import os
@@ -25,9 +23,19 @@ user_router = APIRouter(
 
 @user_router.post("/signup", description=descriptions.create_user, response_model=UserOut)
 async def create_user(user: User = Depends(User), file: UploadFile = File(None), db: Session = Depends(get_db)):
+
+    if user.password != user.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You didn't match the passwords.")
+
+    user_in_db = db.query(models.User).filter(models.User.email == user.email).first()
+    if user_in_db:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="Email is already in use, please provide different one.")
+
     if file:
         if not file.content_type.startswith("image"):
             return {"error": "Invalid type"}
+
         image = Image.open(BytesIO(await file.read()))
         filepath = "/static/images/"
         filename = file.filename
@@ -39,7 +47,11 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
     hashed_password = utils.hash(user.password)
     user.password = hashed_password
 
-    new_user = models.User(**user.model_dump(), image_path=to_save)
+    user_data = user.model_dump()
+
+    user_data.pop('confirm_password', None)
+
+    new_user = models.User(**user_data, image_path=to_save)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -65,13 +77,13 @@ def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_c
 
 @user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOutWithRole)
 def get_user_by_id(id: int, db: Session = Depends(get_db)):
-    user, role = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).filter(models.User.id == id).first()
-
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that id not found")
-
-    response = {"User": user, "Role": role}
-    return response
+    try:
+        user, role = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).filter(models.User.id == id).first()
+        response = {"User": user, "Role": role}
+        print(utils.hash("user1"))
+        return response
+    except:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that id was not found")
 
 
 @user_router.delete("/{id}", description=descriptions.delete_user)
@@ -117,28 +129,18 @@ async def update_user_image(file: UploadFile = File(None), db: Session = Depends
 
 @user_router.put("/", description=descriptions.update_user)
 async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
-                      user_from_token: TokenData = Depends(get_current_user), authorization: str | None = Header(None),):
+                      user_from_token: TokenData = Depends(get_current_user)):
 
-    user_query = db.query(models.User).filter(models.User.id == user_from_token.user_id)
+    user = db.query(models.User).filter(models.User.id == user_from_token.user_id).first()
 
-    user = user_query.first()
+    try:
+        for attribute in updated_user:
+            if attribute[1] is not None:
+                setattr(user, attribute[0], attribute[1])
+        db.commit()
+    except sqlalchemy.exc.IntegrityError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Email already in use!")
 
-    if updated_user.email:
-        user.email = updated_user.email
-
-    if updated_user.first_name:
-        user.first_name = updated_user.first_name
-
-    if updated_user.last_name:
-        user.last_name = updated_user.last_name
-
-    if updated_user.new_password and updated_user.old_password:
-        if utils.verify(updated_user.old_password, user.password):
-            user.password = utils.hash(updated_user.new_password)
-        else:
-            return {"message": "Incorrect password"}
-
-    db.commit()
     db.refresh(user)
 
     data = {"user_id": str(user.id), "first_name": user.first_name, "last_name": user.last_name,
@@ -151,3 +153,18 @@ async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
         detail="User updated successfully",
         headers={"Authorization": f"Bearer {access_token}"},
     )
+
+
+@user_router.put("/change_password")
+def change_password(passwords: ChangePassword, db: Session = Depends(get_db),
+                      user_from_token: TokenData = Depends(get_current_user)):
+
+    user = db.query(models.User).filter(models.User.id == user_from_token.user_id).first()
+
+    if (utils.verify(passwords.old_password, user.password)):
+        hashed_password = utils.hash(passwords.new_password)
+        user.password = hashed_password
+        db.commit()
+        return HTTPException(status_code=status.HTTP_200_OK, detail="Password changed successfully")
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Passwords don't match")

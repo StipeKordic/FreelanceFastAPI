@@ -1,4 +1,4 @@
-"""add unique constraint to services name and short description
+"""add unique constraint to services name
 
 Revision ID: 1a70361a91f5
 Revises: eebf47021a9e
@@ -19,10 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_unique_constraint('unique_constraint_services', 'services', ['name', 'short_description'])
+    op.create_unique_constraint('unique_constraint_name_services', 'services', ['name'])
     pass
 
 
 def downgrade() -> None:
-    op.drop_constraint('unique_constraint_services', 'services', type_='unique', columns=['name', 'short_description'])
+    op.drop_constraint('unique_constraint_name_services', 'services')
     pass

@@ -38,11 +38,20 @@ def get_service_by_id(id: int, db: Session = Depends(get_db)):
 
 
 @service_router.post("/", description=descriptions.create_service)
-async def create_service(request: Request, service: Service = Depends(Service), file: UploadFile = File(None),
+async def create_service(service: Service = Depends(Service), file: UploadFile = File(None),
                          db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     if "create_service" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
+
+    service_from_db_name = (db.query(models.Service.name).filter(models.Service.name == service.name))
+    service_from_db_short_description = (db.query(models.Service.short_description)
+                                         .filter(models.Service.short_description == service.short_description))
+
+    if service_from_db_name.first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Service name already exists")
+    elif service_from_db_short_description.first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Service short_description already exists")
 
     if file:
         if not file.content_type.startswith("image"):
@@ -63,7 +72,7 @@ async def create_service(request: Request, service: Service = Depends(Service), 
 
     return new_service
 # This way name, description and short_description are sent as query parameters, so maybe it can be used here
-# but probably not for creating user
+# but probably not for creating user?
 
 # @service_router.post("/s")
 # async def create_service(name: str, description: str, short_description: str,
@@ -146,16 +155,18 @@ async def update_service(id: int, updated_service: ServiceUpdate, db: Session = 
     if service is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service does not exist")
 
-    # service_query.update(updated_service.model_dump(), synchronize_session=False)
+    service_from_db_name = (db.query(models.Service.name).filter(models.Service.name == updated_service.name))
+    service_from_db_short_description = (db.query(models.Service.short_description)
+                                         .filter(models.Service.short_description == updated_service.short_description))
 
-    if updated_service.name:
-        service.name = updated_service.name
+    if service_from_db_name.first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Service name already exists")
+    elif service_from_db_short_description.first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Service short_description already exists")
 
-    if updated_service.description:
-        service.description = updated_service.description
-
-    if updated_service.short_description:
-        service.short_description = updated_service.short_description
+    for attribute in updated_service:
+        if attribute[1] is not None:
+            setattr(service, attribute[0], attribute[1])
 
     db.commit()
 

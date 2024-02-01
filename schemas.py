@@ -45,14 +45,18 @@ class User(BaseModel):
     first_name: str
     last_name: str
     password: str
+    confirm_password: str
 
 
 class UserUpdate(BaseModel):
     email: Union[EmailStr, None] = None
     first_name: Union[str, None] = None
     last_name: Union[str, None] = None
-    old_password: Union[str, None] = None
-    new_password: Union[str, None] = None
+
+
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str
 
 
 class UserOut(BaseModel):
@@ -87,6 +91,7 @@ class RoleOut(Role):
 class UserOutWithRole(BaseModel):
     User: UserOut
     Role: RoleOut
+
 
 class Permission(BaseModel):
     permission_name: str
