@@ -1,5 +1,6 @@
 from typing import Annotated, Union, List
 
+import sqlalchemy
 from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Header, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
@@ -45,13 +46,14 @@ async def create_post(post: Post = Depends(Post), file: UploadFile = File(None),
 
 
 @post_router.get("/", description=descriptions.get_all_posts)
-def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current_user)):
+def get_all_posts(db: Session = Depends(get_db), page: int = 1, user: int = Depends(get_current_user)):
 
     posts = (db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
                      label("Number of reviews"), models.User.email).select_from(models.Post).join(
         models.User, models.Post.user_id == models.User.id).join(models.Review, models.Post.id == models.Review.post_id
                                                                  , isouter=True).group_by(
-                                                                                models.Post, models.User.email).all())
+                                                                                models.Post, models.User.email)
+             .offset((page - 1) * 10).limit(10).all())
 
     posts = list(map(lambda x: x._mapping, posts))
     list_of_dictionaries = [dict(post) for post in posts]
@@ -63,12 +65,14 @@ def get_all_posts(db: Session = Depends(get_db), user: int = Depends(get_current
 
 
 @post_router.get("/service/{id}", description=descriptions.get_posts_by_service)
-def get_posts_by_service(id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
+def get_posts_by_service(id: int, page: int = 1, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     posts = (db.query(models.Post, func.avg(models.Review.review).label("Review"), func.count(models.Review.post_id).
-                     label("Number of reviews")).join(models.Review, models.Post.id == models.Review.post_id,
-                                                      isouter=True).group_by(models.Post)
-                                                    .filter(models.Post.service_id == id).all())
+                     label("Number of reviews"), models.User.email).select_from(models.Post).join(
+        models.User, models.Post.user_id == models.User.id).join(models.Review, models.Post.id == models.Review.post_id,
+                                                      isouter=True).group_by(models.Post, models.User.email)
+                                                    .filter(models.Post.service_id == id)
+             .offset((page - 1) * 10).limit(10).all())
 
     posts = list(map(lambda x: x._mapping, posts))
     list_of_dictionaries = [dict(post) for post in posts]
@@ -85,9 +89,10 @@ def get_posts_by_filter(service_id: int = 0, min_price: float = 0, max_price: fl
                         db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     basic_query = (db.query(models.Post, func.avg(models.Review.review).label("Review"),
-                                      func.count(models.Review.post_id).label("Number of reviews")).join(models.Review,
-                                                                                                        isouter=True)
-                                    .group_by(models.Post).filter(
+                                      func.count(models.Review.post_id).label("Number of reviews"), models.User.email)
+    .select_from(models.Post).join(models.User, models.Post.user_id == models.User.id)
+    .join(models.Review, models.Post.id == models.Review.post_id, isouter=True)
+                                    .group_by(models.Post, models.User.email).filter(
                                         models.Post.price >= min_price, models.Post.price <= max_price)
                                     )
 
@@ -171,13 +176,13 @@ def update_post(id: int, updated_post: PostUpdate, db: Session = Depends(get_db)
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post with that id not found")
 
-    if updated_post.description:
-        post.description = updated_post.description
-
-    if updated_post.price:
-        post.price = updated_post.price
-
-    db.commit()
+    try:
+        for attribute in updated_post:
+            if attribute[1] is not None:
+                setattr(user, attribute[0], attribute[1])
+        db.commit()
+    except sqlalchemy.exc.IntegrityError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Email already in use!")
 
     return {"data": post_query.first()}
 
