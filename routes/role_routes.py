@@ -34,10 +34,8 @@ def get_all_roles(db: Session = Depends(get_db)):
 @role_router.put("/user/{user_id}/{new_role_id}", description=descriptions.update_role_of_user)
 def update_role_of_user(user_id: int, new_role_id: int, db: Session = Depends(get_db),
                             user_from_token: TokenData = Depends(get_current_user)):
-
     if "update_role_of_user" not in user_from_token.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
-
     user_query = db.query(models.UserRole).filter(models.UserRole.user_id == user_id)
     user = user_query.first()
     user.role_id = new_role_id

@@ -180,3 +180,71 @@ create_new_access_token = "Refresh token is sent as query parameter and user id 
                            " login route. New access token is then created. This route is supposed to be called every "\
                             "few minutes before original tokens expire so user doesn't need to login constantly. Refresh "\
                             "token also has expiration time so when it is done user will then need to log in again"
+
+'''
+lista = [('6','6','Objava 1 korisnika 6','198','/static/images/f5bd64a16e3f033b78b3.jpg'),
+('2','3','Objava 1 korisnika 2','83','/static/images/2d32c3e19c2c03185d21.jpg'),
+('10','3','Objava 1 korisnika 10','206','/static/images/c133aabdef54a9edadaf.jpg'),
+('5','3','Objava 1 korisnika 5','272','/static/images/dc368e3c68d41ac6a55c.jpg'),
+('3','2','Objava 1 korisnika 3','207','/static/images/eb6ce9454948a4773bf0.jpg'),
+('4','5','Objava 1 korisnika 4','45','/static/images/005082e398f994d9067f.jpg'),
+('9','1','Objava 1 korisnika 9','212','/static/images/75415093541a9c237679.jpg'),
+('10','3','Objava 2 korisnika 10','244','/static/images/1279a595f12812642bf8.jpg'),
+('8','6','Objava 1 korisnika 8','205','/static/images/534a2f8dc63227f5c533.jpg'),
+('4','3','Objava 2 korisnika 4','202','/static/images/d054165b47cc6edae792.jpg'),
+('7','4','Objava 1 korisnika 7','297','/static/images/21713495fa8866a38d9b.jpg'),
+('6','2','Objava 2 korisnika 6','34','/static/images/1df562466e35e1f58b6f.jpg'),
+('7','6','Objava 2 korisnika 7','32','/static/images/c58b9eb77670bcd1110c.jpg'),
+('8','1','Objava 2 korisnika 8','296','/static/images/bb5d7938c4f6e7f12ee0.jpg'),
+('6','7','Objava 3 korisnika 6','216','/static/images/3eac082c22c50b98e57d.jpg'),
+('3','6','Objava 2 korisnika 3','224','/static/images/b33295747778618a1a28.jpg'),
+('7','6','Objava 3 korisnika 7','113','/static/images/84e5beb3f119381bb0ba.jpg'),
+('4','4','Objava 3 korisnika 4','72','/static/images/4da809ef560e15cf11b2.jpg'),
+('5','7','Objava 2 korisnika 5','52','/static/images/88ba4d6b7ed2fedce618.jpg'),
+('3','1','Objava 3 korisnika 3','282','/static/images/e269fc8fc1ae0abc836c.jpg'),
+('3','4','Objava 4 korisnika 3','154','/static/images/fa233f83589ac4f1a688.jpg'),
+('3','3','Objava 5 korisnika 3','149','/static/images/fe6a768b99cb3fa82d82.jpg'),
+('4','2','Objava 4 korisnika 4','171','/static/images/b08ed74acea44bee3ccd.jpg'),
+('6','4','Objava 4 korisnika 6','97','/static/images/ded2597b175d09827aa1.jpg'),
+('2','1','Objava 2 korisnika 2','260','/static/images/f8e687b9626855c84172.jpg'),
+('8','1','Objava 3 korisnika 8','86','/static/images/213dab6ecf4c120ddb12.jpg'),
+('4','7','Objava 5 korisnika 4','141','/static/images/91020dec4cf9e38e4b1c.jpg'),
+('7','7','Objava 4 korisnika 7','56','/static/images/7b0d75afa7e74a6c6d8f.jpg'),
+('6','5','Objava 5 korisnika 6','218','/static/images/afa99e202c74160249ff.jpg'),
+('5','2','Objava 3 korisnika 5','80','/static/images/1ccbdaaf6a0cab444758.jpg'),
+('7','5','Objava 5 korisnika 7','266','/static/images/5509e29d0cb64b5f9fa1.jpg'),
+('4','3','Objava 6 korisnika 4','159','/static/images/cf4101387c4d345f10f7.jpg'),
+('5','1','Objava 4 korisnika 5','38','/static/images/f8f55aa1a4a968f1982b.jpg'),
+('10','3','Objava 3 korisnika 10','48','/static/images/2d1d63fa1818d326440b.jpg'),
+('1','6','Objava 1 korisnika 1','181','/static/images/09cb5fea1df6f844ed34.jpg'),
+('10','5','Objava 4 korisnika 10','154','/static/images/5360e4195f1cb854a508.jpg'),
+('10','5','Objava 5 korisnika 10','105','/static/images/c01ce07d54dd7f311e89.jpg'),
+('8','5','Objava 4 korisnika 8','215','/static/images/b83bf264f0dac0660f53.jpg'),
+('3','7','Objava 6 korisnika 3','201','/static/images/c91de66c8e08beec9b73.jpg'),
+('7','6','Objava 6 korisnika 7','196','/static/images/4749b81dc4ae4d392dbd.jpg'),
+('9','4','Objava 2 korisnika 9','78','/static/images/9c32c908b166677f1288.jpg'),
+('9','4','Objava 3 korisnika 9','144','/static/images/9bf544854e51ef2aa015.jpg'),
+('6','5','Objava 6 korisnika 6','93','/static/images/e7bd6ee1e9ce3540d5ed.jpg'),
+('4','4','Objava 7 korisnika 4','255','/static/images/200d963aa23d4e15bfa0.jpg'),
+('9','4','Objava 4 korisnika 9','191','/static/images/d423b89438f33ed47acc.jpg'),
+('3','7','Objava 7 korisnika 3','214','/static/images/2a376c4d7cc62af43f79.jpg'),
+('9','6','Objava 5 korisnika 9','70','/static/images/a33ee424896985df07cf.jpg'),
+('1','1','Objava 2 korisnika 1','292','/static/images/40955052cdc77b7852da.jpg'),
+('9','6','Objava 6 korisnika 9','156','/static/images/9ec9a8ab4f46416fdca5.jpg'),
+('3','3','Objava 8 korisnika 3','106','/static/images/dd41a2b93b352ac21573.jpg')]
+
+putanje = [
+    "/static/images/e6188aadba0dfbb9849e.jpg",
+    "/static/images/98d09f7f6c52ac395a11.jpg",
+    "/static/images/eff7b21ef27b4235a287.jpg",
+    "/static/images/0239886d2fcd6b3e8f5b.jpg",
+    "/static/images/fbb0d805c87dcfbc7a5d.jpg",
+    "/static/images/9bdc6511db8d9f295012.jpg"
+
+]
+import random
+for element in lista:
+    description = "Post "+ element[2][7]+ " from user "+ element[2][19::]
+    slika = random.choice(putanje)
+    dijelovi = list(element)
+    print("('"+dijelovi[0]+"','"+ dijelovi[1]+"','"+ description+"','"+ dijelovi[3]+"','"+ slika+"'),")'''

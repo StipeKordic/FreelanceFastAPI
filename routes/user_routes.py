@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import utils
+from sqlalchemy import func
 from oauth2 import get_current_user, create_access_token
 from schemas import User, UserUpdate, TokenData, UserOut, UserOutWithRole, ChangePassword
 from PIL import Image
@@ -44,7 +45,7 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
     else:
         to_save = "/static/images/default.jpg"
 
-    hashed_password = utils.hash(user.password)
+    hashed_password = utils.hash_password(user.password)
     user.password = hashed_password
 
     user_data = user.model_dump()
@@ -68,31 +69,31 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
 def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     if "get_all_users" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
-    users = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).all()
+    users = (db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).all())
 
     users = list(map(lambda x: x._mapping, users))
 
     return users
 
 
-@user_router.get("/{id}", description=descriptions.get_user_by_id, response_model=UserOutWithRole)
-def get_user_by_id(id: int, db: Session = Depends(get_db)):
+@user_router.get("/{user_id}", description=descriptions.get_user_by_id, response_model=UserOutWithRole)
+def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
     try:
-        user, role = db.query(models.User, models.Role).select_from(models.User).join(models.UserRole).join(models.Role).filter(models.User.id == id).first()
+        user, role = (db.query(models.User, models.Role).select_from(models.User).join(models.UserRole)
+                      .join(models.Role).filter(models.User.id == user_id).first())
         response = {"User": user, "Role": role}
-        print(utils.hash("user1"))
         return response
-    except:
+    except TypeError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User with that id was not found")
 
 
-@user_router.delete("/{id}", description=descriptions.delete_user)
-def delete_user(id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
+@user_router.delete("/{user_id}", description=descriptions.delete_user)
+def delete_user(user_id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     if "delete_user" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
 
-    user = db.query(models.User).filter(models.User.id == id)
+    user = db.query(models.User).filter(models.User.id == user_id)
 
     if user.first() is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
@@ -120,6 +121,22 @@ async def update_user_image(file: UploadFile = File(None), db: Session = Depends
     to_save = filepath + secrets.token_hex(10) + filename[-4::]
     image.save(os.path.join("static/images/", to_save[15::]))
 
+    user.image_path = to_save
+
+    db.commit()
+
+    return user_query.first()
+
+
+@user_router.put("/image_delete")
+async def delete_user_image(db: Session = Depends(get_db), user_from_token: TokenData = Depends(get_current_user)):
+    user_query = db.query(models.User).filter(models.User.id == user_from_token.user_id)
+
+    user = user_query.first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
+
+    to_save = "/static/images/default.jpg"
     user.image_path = to_save
 
     db.commit()
@@ -157,12 +174,12 @@ async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
 
 @user_router.put("/change_password")
 def change_password(passwords: ChangePassword, db: Session = Depends(get_db),
-                      user_from_token: TokenData = Depends(get_current_user)):
+                    user_from_token: TokenData = Depends(get_current_user)):
 
     user = db.query(models.User).filter(models.User.id == user_from_token.user_id).first()
 
-    if (utils.verify(passwords.old_password, user.password)):
-        hashed_password = utils.hash(passwords.new_password)
+    if utils.verify_password(passwords.old_password, user.password):
+        hashed_password = utils.hash_password(passwords.new_password)
         user.password = hashed_password
         db.commit()
         return HTTPException(status_code=status.HTTP_200_OK, detail="Password changed successfully")

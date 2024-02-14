@@ -23,7 +23,7 @@ def review_post(review: Review, db: Session = Depends(get_db), user: TokenData =
     if not found_review:
         post = db.query(models.Post).filter(models.Post.id == review.post_id).first()
         if not post:
-            raise  HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post was not found!")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post was not found!")
         elif post.user_id == user.user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can not review your post")
         new_review = models.Review(user_id=user.user_id, **review.model_dump())
@@ -49,3 +49,9 @@ def get_review_of_post(id: int, db: Session = Depends(get_db), user: TokenData =
     num_reviews = db.query(func.count(models.Review.post_id)).filter(models.Review.post_id == id).first()
 
     return {"review": total_sum_reviews[0]/num_reviews[0], "Number of reviews": num_reviews[0]}
+
+
+@review_router.get("/")
+def get_reviews_of_logged_user(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
+    reviews = db.query(models.Review).filter(models.Review.user_id == user.user_id).all()
+    return reviews

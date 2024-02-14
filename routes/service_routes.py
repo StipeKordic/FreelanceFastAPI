@@ -2,7 +2,7 @@ import os
 import secrets
 from PIL import Image
 from io import BytesIO
-from fastapi import APIRouter, status, Depends, Response, File, UploadFile, Request
+from fastapi import APIRouter, status, Depends, Response, File, UploadFile
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -21,20 +21,23 @@ service_router = APIRouter(
 @service_router.get("/", description=descriptions.get_all_services)
 def get_all_services(db: Session = Depends(get_db)):
     services = db.query(models.Service, func.count(models.Post.service_id).label("Number of posts")).join(
-        models.Post, models.Post.service_id == models.Service.id,isouter=True).group_by(models.Service).order_by(
+        models.Post, models.Post.service_id == models.Service.id, isouter=True).group_by(models.Service).order_by(
         func.count(models.Post.service_id).desc()).all()
 
     services = list(map(lambda x: x._mapping, services))
     return services
 
 
-@service_router.get("/{id}", description=descriptions.get_service_by_id)
-def get_service_by_id(id: int, db: Session = Depends(get_db)):
-    service = db.query(models.Service).filter(models.Service.id == id).first()
+@service_router.get("/{service_id}", description=descriptions.get_service_by_id)
+def get_service_by_id(service_id: int, db: Session = Depends(get_db)):
+    try:
+        service, num_posts = db.query(models.Service, func.count(models.Post.service_id)).join(
+            models.Post, models.Post.service_id == models.Service.id, isouter=True).group_by(models.Service).filter(
+            models.Service.id == service_id).first()
 
-    if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service with that id is not found")
-    return {"Service": service}
+    except TypeError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service with that id was not found")
+    return {"Service": service, "Number of posts": num_posts}
 
 
 @service_router.post("/", description=descriptions.create_service)
@@ -97,13 +100,13 @@ async def create_service(service: Service = Depends(Service), file: UploadFile =
 #     return {"Service": new_service}
 
 
-@service_router.delete("/{id}", description=descriptions.delete_service)
-def delete_service(id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
+@service_router.delete("/{service_id}", description=descriptions.delete_service)
+def delete_service(service_id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
 
     if "delete_service" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
 
-    service = db.query(models.Service).filter(models.Service.id == id)
+    service = db.query(models.Service).filter(models.Service.id == service_id)
 
     if service.first() is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service does not exist")
@@ -114,14 +117,14 @@ def delete_service(id: int, db: Session = Depends(get_db), user: TokenData = Dep
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@service_router.put("/image/{id}", description=descriptions.update_service_image)
-async def update_service_image(id: int, file: UploadFile = File(None), db: Session = Depends(get_db),
+@service_router.put("/image/{service_id}", description=descriptions.update_service_image)
+async def update_service_image(service_id: int, file: UploadFile = File(None), db: Session = Depends(get_db),
                                user: TokenData = Depends(get_current_user)):
 
     if "update_service_image" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
 
-    service_query = db.query(models.Service).filter(models.Service.id == id)
+    service_query = db.query(models.Service).filter(models.Service.id == service_id)
 
     service = service_query.first()
     if service is None:
@@ -142,14 +145,14 @@ async def update_service_image(id: int, file: UploadFile = File(None), db: Sessi
     return {"data": service_query.first()}
 
 
-@service_router.put("/{id}", description=descriptions.update_service)
-async def update_service(id: int, updated_service: ServiceUpdate, db: Session = Depends(get_db),
+@service_router.put("/{service_id}", description=descriptions.update_service)
+async def update_service(service_id: int, updated_service: ServiceUpdate, db: Session = Depends(get_db),
                          user: TokenData = Depends(get_current_user)):
 
     if "update_service" not in user.permissions:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permission!")
 
-    service_query = db.query(models.Service).filter(models.Service.id == id)
+    service_query = db.query(models.Service).filter(models.Service.id == service_id)
 
     service = service_query.first()
     if service is None:

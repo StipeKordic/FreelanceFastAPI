@@ -1,5 +1,5 @@
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import os
 import models
 from schemas import TokenData
@@ -22,7 +22,7 @@ REFRESH_TOKEN_EXPIRE_HOURS = os.getenv("REFRESH_TOKEN_EXPIRE_HOURS")
 def create_access_token(data: dict, refresh_token: str = None):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(UTC) + timedelta(minutes=float(ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -36,7 +36,7 @@ def create_access_token(data: dict, refresh_token: str = None):
 def create_refresh_token(data: dict):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(hours=float(REFRESH_TOKEN_EXPIRE_HOURS))
+    expire = datetime.now(UTC) + timedelta(hours=float(REFRESH_TOKEN_EXPIRE_HOURS))
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

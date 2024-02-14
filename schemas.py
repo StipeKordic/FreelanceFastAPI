@@ -65,6 +65,7 @@ class UserOut(BaseModel):
     last_name: str
     created_at: datetime.datetime
     image_path: str
+    id: int
 
 
 class TokenData(BaseModel):
