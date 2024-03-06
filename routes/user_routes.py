@@ -3,6 +3,8 @@ import sqlalchemy.exc
 from fastapi import APIRouter, status, Depends, Response, File, UploadFile
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
+
+from controller.user_controller import UserController
 from database import get_db
 import models
 import utils
@@ -14,14 +16,19 @@ from io import BytesIO
 import os
 import secrets
 import descriptions
-
+from services.result import Result
 
 user_router = APIRouter(
     prefix='/users',
     tags=['users']
 )
 
-
+@user_router.post("/signup", description=descriptions.create_user, response_model=UserOut)
+async def create_user(user: User = Depends(User), file: UploadFile = File(None), db: Session = Depends(get_db)):
+    cont = UserController(db)
+    result: Result = await cont.create(user, file)
+    return result.item
+'''
 @user_router.post("/signup", description=descriptions.create_user, response_model=UserOut)
 async def create_user(user: User = Depends(User), file: UploadFile = File(None), db: Session = Depends(get_db)):
 
@@ -63,7 +70,7 @@ async def create_user(user: User = Depends(User), file: UploadFile = File(None),
     db.refresh(new_user)
 
     return new_user
-
+'''
 
 @user_router.get("/", description=descriptions.get_all_users, response_model=List[UserOutWithRole])
 def get_all_users(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):

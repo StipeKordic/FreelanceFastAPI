@@ -1,7 +1,8 @@
 import datetime
-from typing import Optional, Union, List
-from pydantic import BaseModel, EmailStr
+from typing import Optional, Union, List, Any
+from pydantic import BaseModel, EmailStr, Field
 from fastapi import Form
+from humps import camelize
 
 
 def form_body(cls):
@@ -21,6 +22,36 @@ class Service(BaseModel):
     short_description: str
 
 
+class ServiceRead(BaseModel):
+    name: str
+    id: int
+
+    class Config:
+        alias_generator = lambda x: camelize(x)
+        populate_by_name = True
+
+
+class UserReadForPost(BaseModel):
+    email: str
+    id: int
+
+    class Config:
+        alias_generator = lambda x: camelize(x)
+        populate_by_name = True
+
+
+
+'''
+class ServiceOut(BaseModel):
+    name: str
+    description: str
+    short_description: str
+
+class ServiceOutWithNumber(BaseModel):
+    Service: ServiceOut
+    NumberOfPosts: int
+'''
+
 class ServiceUpdate(BaseModel):
     name: Union[str, None] = None
     description: Union[str, None] = None
@@ -34,9 +65,91 @@ class Post(BaseModel):
     service_id: int
 
 
+class PostRead(BaseModel):
+    description: str
+    price: float
+    service_id: int
+    user_id: int
+    image_path: str
+    average_review: float
+    number_of_reviews: int
+    service: ServiceRead
+    user: UserReadForPost
+
+    class Config:
+        alias_generator = lambda x: camelize(x)
+        populate_by_name = True
+
+
 class PostUpdate(BaseModel):
     description: Union[str, None] = None
     price: Union[float, None] = None
+
+
+class QueryFilter(BaseModel):
+    field: str
+    operator: str
+    value: Any
+
+    def to_touple(self):
+        return self.field, self.operator, self.value
+
+
+class ServiceQuery(BaseModel):
+    description: Optional[str] = None
+    short_description: Optional[str] = None
+
+    @property
+    def get_operators(self):
+        return {
+            'description': 'like',
+            'short_description': 'like'
+        }
+
+    @property
+    def get_fields(self):
+        return {
+            'description': 'description',
+            'short_description': 'short_description'
+        }
+
+
+class PostQuery(BaseModel):
+    service_id: Optional[int] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+
+    @property
+    def get_operators(self):
+        return {
+            'service_id': 'eq',
+            'min_price': 'ge',
+            'max_price': 'le'
+        }
+
+    @property
+    def get_fields(self):
+        return {
+            'service_id': 'service_id',
+            'min_price': 'price',
+            'max_price': 'price'
+        }
+
+
+class PostQueryByService(BaseModel):
+    service_id: Optional[int] = None
+
+    @property
+    def get_operators(self):
+        return {
+            'service_id': 'eq'
+        }
+
+    @property
+    def get_fields(self):
+        return {
+            'service_id': 'service_id'
+        }
 
 
 @form_body
@@ -45,7 +158,6 @@ class User(BaseModel):
     first_name: str
     last_name: str
     password: str
-    confirm_password: str
 
 
 class UserUpdate(BaseModel):
@@ -66,6 +178,10 @@ class UserOut(BaseModel):
     created_at: datetime.datetime
     image_path: str
     id: int
+
+    class Config:
+        alias_generator = lambda x: camelize(x)
+        populate_by_name = True
 
 
 class TokenData(BaseModel):

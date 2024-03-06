@@ -1,16 +1,21 @@
 import os
 import secrets
+from typing import List
+
 from PIL import Image
 from io import BytesIO
 from fastapi import APIRouter, status, Depends, Response, File, UploadFile
 from fastapi.exceptions import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+from controller.service_controller import ServiceController
 from database import get_db
 import models
 import descriptions
-from schemas import Service, ServiceUpdate, TokenData
+from schemas import Service, ServiceUpdate, TokenData, ServiceRead, PostQuery, ServiceQuery
 from oauth2 import get_current_user
+from services.result import Result
 
 service_router = APIRouter(
     prefix='/services',
@@ -18,14 +23,23 @@ service_router = APIRouter(
 )
 
 
+@service_router.get("/")
+def get_all_services(query: ServiceQuery = Depends(),db: Session = Depends(get_db)):
+    cont = ServiceController(db)
+    result: Result = cont.get_many(query_params=query)
+    return result.items
+
+
+'''
 @service_router.get("/", description=descriptions.get_all_services)
 def get_all_services(db: Session = Depends(get_db)):
-    services = db.query(models.Service, func.count(models.Post.service_id).label("Number of posts")).join(
+    services = db.query(models.Service, func.count(models.Post.service_id).label("NumberOfPosts")).join(
         models.Post, models.Post.service_id == models.Service.id, isouter=True).group_by(models.Service).order_by(
         func.count(models.Post.service_id).desc()).all()
 
     services = list(map(lambda x: x._mapping, services))
     return services
+'''
 
 
 @service_router.get("/{service_id}", description=descriptions.get_service_by_id)
@@ -40,6 +54,15 @@ def get_service_by_id(service_id: int, db: Session = Depends(get_db)):
     return {"Service": service, "Number of posts": num_posts}
 
 
+@service_router.post("/", description=descriptions.create_service)
+async def create_service(service: Service = Depends(Service), file: UploadFile = File(None),
+                         db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
+    cont = ServiceController(db)
+    result: Result = await cont.create(service, file)
+    return result.item
+
+
+'''
 @service_router.post("/", description=descriptions.create_service)
 async def create_service(service: Service = Depends(Service), file: UploadFile = File(None),
                          db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
@@ -98,7 +121,7 @@ async def create_service(service: Service = Depends(Service), file: UploadFile =
 #     db.refresh(new_service)
 #
 #     return {"Service": new_service}
-
+'''
 
 @service_router.delete("/{service_id}", description=descriptions.delete_service)
 def delete_service(service_id: int, db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
@@ -146,6 +169,16 @@ async def update_service_image(service_id: int, file: UploadFile = File(None), d
 
 
 @service_router.put("/{service_id}", description=descriptions.update_service)
+def update_service(service_id: int, updated_service: ServiceUpdate, db: Session = Depends(get_db),
+                         user: TokenData = Depends(get_current_user)):
+
+    cont = ServiceController(db)
+    result: Result = cont.update(updated_service, service_id)
+    return result.item
+
+
+'''
+@service_router.put("/{service_id}", description=descriptions.update_service)
 async def update_service(service_id: int, updated_service: ServiceUpdate, db: Session = Depends(get_db),
                          user: TokenData = Depends(get_current_user)):
 
@@ -174,3 +207,4 @@ async def update_service(service_id: int, updated_service: ServiceUpdate, db: Se
     db.commit()
 
     return {"data": service_query.first()}
+'''

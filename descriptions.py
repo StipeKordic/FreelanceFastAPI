@@ -248,3 +248,21 @@ for element in lista:
     slika = random.choice(putanje)
     dijelovi = list(element)
     print("('"+dijelovi[0]+"','"+ dijelovi[1]+"','"+ description+"','"+ dijelovi[3]+"','"+ slika+"'),")'''
+'''
+import random
+imena = []
+prezimena = []
+
+while 1:
+    ime = input("Unesite ime učenika: ")
+    if ime == "x" or ime == "X":
+        break
+    prezime = input("Unesite prezime učenika: ")
+    imena.append(ime)
+    prezimena.append(prezime)
+
+for i in range(len(imena)):
+    print(imena[i], "-", prezimena[i],"-", i)
+
+nasumicni_broj = random.randint(0, len(imena))
+print("Nasumično odabrani učenik je: ", imena[nasumicni_broj], prezimena[nasumicni_broj])'''
