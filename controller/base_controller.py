@@ -47,24 +47,30 @@ class BaseController:
     async def create(self, item_in, file=None) -> Result:
         try:
             # print(item_in)
-            if file or str(self.default_repo) == "UserRepository":
-                if file:
-                    if not file.content_type.startswith("image"):
-                        return Result.fail("Invalid type")
-                    file_data = await file.read()
-                    image = Image.open(BytesIO(file_data))
-                    filepath = "/static/images/"
-                    filename = file.filename
-                    to_save = filepath + secrets.token_hex(10) + filename[-4::]
-                    image.save(os.path.join("static/images/", to_save[15::]))
-                else:
-                    to_save = "/static/images/" + "default.jpg"
+            to_save = await self.save_image(file)
+            if to_save.success:  # This is not true if to_save=Result.fail("Invalid type")
+                item = self.default_repo.create(self.db, item_in, to_save.item)  # Calling create method from either base_repository or user_repository
             else:
-                return Result.fail("Image must be provided")
-            item = self.default_repo.create(self.db, item_in, to_save)
+                return to_save
+            if not item:  # None returned from base_repository
+                return Result.fail("Image must be provided!")
             return Result.ok(item)
         except Exception as ex:
             return Result.fail(ex)
+
+    async def save_image(self, file=None) -> Result:
+        if file:
+            if not file.content_type.startswith("image"):  # If file type is not image return failed Result object
+                return Result.fail("Invalid type")
+            file_data = await file.read()
+            image = Image.open(BytesIO(file_data))
+            filepath = "/static/images/"
+            filename = file.filename
+            to_save = filepath + secrets.token_hex(10) + filename[-4::]
+            image.save(os.path.join(filepath[1::], to_save[15::]))
+            return Result.ok(to_save)  # If everything is good, return Result object with value being path to image
+        else:
+            return Result.ok("static/images/default.jpg")  # If file was not sent, return Result object with value being path to default image (User profile default image)
 
     def update(self, item_in, item_id: int) -> Result:
         result: Result = self.get_one(item_id)
