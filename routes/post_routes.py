@@ -136,12 +136,11 @@ def get_posts_of_logged_user(db: Session = Depends(get_db), user: TokenData = De
     return list_of_dictionaries'''
 
 
-@post_router.get("/userPosts") # Don't forget response model here
+@post_router.get("/userPosts", response_model=List[PostRead])
 def get_posts_of_logged_user(db: Session = Depends(get_db), user: TokenData = Depends(get_current_user)):
     cont = PostController(db)
-    result: Result = cont.get_many()
+    result: Result = cont.get_many_posts_of_user(user.user_id)
     return result.items
-
 
 
 @post_router.get("/{post_id}", description=descriptions.get_post_by_id)
@@ -163,6 +162,14 @@ def get_post_by_id(post_id: int, db: Session = Depends(get_db), user: int = Depe
     return response
 
 
+@post_router.put("/image/{post_id}", response_model=PostRead)
+async def update_post_image(post_id: int, file: UploadFile = File(None), db: Session = Depends(get_db),
+                            user: TokenData = Depends(get_current_user)):
+    cont = PostController(db)
+    result: Result = await cont.update_image(post_id, file)
+    return result.item
+
+'''
 @post_router.put("/image/{post_id}", description=descriptions.update_post_image)
 async def update_post_image(post_id: int, file: UploadFile = File(None), db: Session = Depends(get_db),
                             user: TokenData = Depends(get_current_user)):
@@ -189,8 +196,19 @@ async def update_post_image(post_id: int, file: UploadFile = File(None), db: Ses
     db.commit()
 
     return {"data": post_query.first()}
+'''
 
 
+@post_router.put("/{post_id}", description=descriptions.update_post)
+def update_post(post_id: int, updated_post: PostUpdate, db: Session = Depends(get_db),
+                user: int = Depends(get_current_user)):
+
+    cont = PostController(db)
+    result: Result = cont.update(updated_post, post_id)
+    return result.item
+
+
+'''
 @post_router.put("/{post_id}", description=descriptions.update_post)
 def update_post(post_id: int, updated_post: PostUpdate, db: Session = Depends(get_db),
                 user: int = Depends(get_current_user)):
@@ -210,7 +228,7 @@ def update_post(post_id: int, updated_post: PostUpdate, db: Session = Depends(ge
 
 
     return {"data": post_query.first()}
-
+'''
 
 @post_router.delete("/{post_id}", description=descriptions.delete_post)
 def delete_post(post_id: int, db: Session = Depends(get_db), user: int = Depends(get_current_user)):

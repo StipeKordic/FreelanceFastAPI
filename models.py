@@ -1,6 +1,6 @@
-from sqlalchemy.orm import relationship, Mapped, mapped_column, registry, Session
+from sqlalchemy.orm import relationship
 from database import Base
-from sqlalchemy import Column, Integer, Text, String, Float, ForeignKey, func
+from sqlalchemy import Column, Integer, Text, String, Float, ForeignKey
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 

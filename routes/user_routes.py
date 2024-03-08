@@ -110,7 +110,14 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user: TokenData = D
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+@user_router.put("/image_update", description=descriptions.update_user_image, response_model=UserOut)
+async def update_user_image(file: UploadFile = File(None), db: Session = Depends(get_db),
+                            user_from_token: TokenData = Depends(get_current_user)):
+    cont = UserController(db)
+    result: Result = await cont.update_image(user_from_token.user_id, file)
+    return result.item
 
+'''
 @user_router.put("/image_update", description=descriptions.update_user_image, response_model=UserOut)
 async def update_user_image(file: UploadFile = File(None), db: Session = Depends(get_db),
                             user_from_token: TokenData = Depends(get_current_user)):
@@ -133,25 +140,16 @@ async def update_user_image(file: UploadFile = File(None), db: Session = Depends
     db.commit()
 
     return user_query.first()
+'''
 
-
-@user_router.put("/image_delete")
+@user_router.put("/image_delete", response_model=UserOut)
 async def delete_user_image(db: Session = Depends(get_db), user_from_token: TokenData = Depends(get_current_user)):
-    user_query = db.query(models.User).filter(models.User.id == user_from_token.user_id)
-
-    user = user_query.first()
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
-
-    to_save = "/static/images/default.jpg"
-    user.image_path = to_save
-
-    db.commit()
-
-    return user_query.first()
+    cont = UserController(db)
+    result: Result = await cont.update_image(user_from_token.user_id)
+    return result.item
 
 
-@user_router.put("/", description=descriptions.update_user)
+@user_router.put("/", description=descriptions.update_user, response_model=UserOut)
 async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
                       user_from_token: TokenData = Depends(get_current_user)):
 
@@ -179,16 +177,11 @@ async def update_user(updated_user: UserUpdate, db: Session = Depends(get_db),
     )
 
 
-@user_router.put("/change_password")
+@user_router.put("/change_password", response_model=UserOut)
 def change_password(passwords: ChangePassword, db: Session = Depends(get_db),
                     user_from_token: TokenData = Depends(get_current_user)):
 
-    user = db.query(models.User).filter(models.User.id == user_from_token.user_id).first()
+    cont = UserController(db)
+    result: Result = cont.change_password(passwords, user_from_token.user_id)
+    return result.item
 
-    if utils.verify_password(passwords.old_password, user.password):
-        hashed_password = utils.hash_password(passwords.new_password)
-        user.password = hashed_password
-        db.commit()
-        return HTTPException(status_code=status.HTTP_200_OK, detail="Password changed successfully")
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Passwords don't match")

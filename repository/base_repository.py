@@ -50,10 +50,6 @@ class BaseRepository:
         return result.scalars().first()
 
     def create(self, session, obj_in, image_path):
-        # Logic for creating new Service and Post. If image_path is "static/images/default.jpg" that means image file
-        # was not sent and None is returned.
-        if image_path == "static/images/default.jpg":
-            return None
         obj_in_data = dict(obj_in)
         obj_in_data['image_path'] = image_path
         db_obj = self.class_model(**obj_in_data)
@@ -68,6 +64,13 @@ class BaseRepository:
         for field in obj_data:
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
+        session.add(db_obj)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+
+    def update_image(self, session: Session, db_obj, image_path):
+        setattr(db_obj, "image_path", image_path)
         session.add(db_obj)
         session.commit()
         session.refresh(db_obj)

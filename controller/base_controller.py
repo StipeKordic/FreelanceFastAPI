@@ -44,7 +44,7 @@ class BaseController:
             print(ex)
             return Result.fail(ex)
 
-    async def create(self, item_in, file=None) -> Result:
+    async def create(self, item_in, file) -> Result:
         try:
             # print(item_in)
             to_save = await self.save_image(file)
@@ -52,8 +52,6 @@ class BaseController:
                 item = self.default_repo.create(self.db, item_in, to_save.item)  # Calling create method from either base_repository or user_repository
             else:
                 return to_save
-            if not item:  # None returned from base_repository
-                return Result.fail("Image must be provided!")
             return Result.ok(item)
         except Exception as ex:
             return Result.fail(ex)
@@ -70,7 +68,7 @@ class BaseController:
             image.save(os.path.join(filepath[1::], to_save[15::]))
             return Result.ok(to_save)  # If everything is good, return Result object with value being path to image
         else:
-            return Result.ok("static/images/default.jpg")  # If file was not sent, return Result object with value being path to default image (User profile default image)
+            return Result.fail("Image must be provided")  # If file was not sent, return Result object with value being path to default image (User profile default image)
 
     def update(self, item_in, item_id: int) -> Result:
         result: Result = self.get_one(item_id)
@@ -78,6 +76,19 @@ class BaseController:
             return result
         try:
             item = self.default_repo.update(self.db, db_obj=result.value, obj_in=item_in)
+            return Result.ok(item)
+        except Exception as ex:
+            return Result.fail(ex)
+
+    async def update_image(self, item_id: int, file) -> Result:
+        if not file:
+            return Result.fail("Image must be provided")
+        result: Result = self.get_one(item_id)
+        if result.failure:
+            return result
+        try:
+            to_save = await self.save_image(file)
+            item = self.default_repo.update_image(self.db, db_obj=result.value, image_path=to_save.item)
             return Result.ok(item)
         except Exception as ex:
             return Result.fail(ex)

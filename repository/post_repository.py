@@ -17,6 +17,11 @@ class PostRepository(BaseRepository):
         posts = [post for post in posts if post.average_review >= review]
         return posts
 
+    def get_all_posts_of_user(self, session: Session, user_id: int):
+        sql_stmt = select(self.class_model).where(self.class_model.user_id == user_id)
+        result = session.execute(sql_stmt)
+        return result.scalars().all()
+
     '''def get_review_info(self, session: Session, posts: List[models.Post]):
 
         # Calculate average rating and review count for each post
@@ -51,19 +56,4 @@ class PostRepository(BaseRepository):
             self.class_model, models.User.email, models.Service.name)
 
         return sql_stmt
-
-    def get_all_posts_of_user(self, session: Session, _id: int):
-
-        sql_stmt = self.get_all_post_info().where(self.class_model.user_id == _id)
-        result = session.execute(sql_stmt)
-        custom_result = []
-        for post, review_count, review, user_email, service in result:
-            post_dict = post.__dict__
-            post_dict['review_count'] = review_count
-            post_dict['review'] = review
-            post_dict['user_email'] = user_email
-            post_dict['service'] = service
-            custom_result.append(post_dict)
-
-        return custom_result
 '''

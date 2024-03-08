@@ -21,19 +21,20 @@ class PostController(BaseController):
             print(ex)
             return Result.fail(ex)
 
-    '''def get_many_posts_filtered(self, service_id: int) -> Result:
+    def get_many_posts_of_user(self, user_id: int) -> Result:
+        try:
+            items = self.default_repo.get_all_posts_of_user(self.db, user_id)
+            return Result.ok(items)
+        except Exception as ex:
+            print(ex)
+            return Result.fail(ex)
+
+
+''' 
+    def get_many_posts_filtered(self, service_id: int) -> Result:
         try:
             items = self.default_repo.get_all_posts_filtered(self.db, service_id)
             return Result.ok(items)
         except Exception as ex:
             print(ex)
             return Result.fail(ex)'''
-'''
-    def get_many_posts_of_user(self, id: int) -> Result:
-        try:
-            items = self.default_repo.get_all_posts_of_user(self.db, id)
-            return Result.ok(items)
-        except Exception as ex:
-            print(ex)
-            return Result.fail(ex)
-'''
